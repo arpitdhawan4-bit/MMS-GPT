@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+frontend/.env
 
 # Python artifacts
 __pycache__/
@@ -9,8 +10,10 @@ __pycache__/
 *.egg-info/
 schema_dump.txt
 
-# Node / Next.js
+# Node / Next.js / Vite
 node_modules/
+frontend/node_modules/
+frontend/dist/
 .next/
 /out/
 /build
