@@ -1,0 +1,15 @@
+{
+  "name": "mms-gpt",
+  "version": "1.0.0",
+  "description": "Natural Language → SQL via RAG (Supabase + OpenAI + React)",
+  "scripts": {
+    "dev": "concurrently --names \"API,UI\" --prefix-colors \"cyan,green\" \"python -m uvicorn api.main:app --reload --port 8000\" \"npm run dev --prefix frontend\"",
+    "frontend": "npm run dev --prefix frontend",
+    "backend": "python -m uvicorn api.main:app --reload --port 8000",
+    "build": "npm run build --prefix frontend",
+    "install:frontend": "npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
