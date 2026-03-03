@@ -35,6 +35,7 @@ oai = OpenAI(api_key=OPENAI_API_KEY)
 
 TOP_K = 7          # number of schema chunks to retrieve
 MAX_ROWS = 500     # safety cap on result rows
+MAX_SQL_RETRIES = 3  # max attempts to auto-fix broken SQL
 
 # ── FastAPI app ──────────────────────────────────────────────────────────────
 app = FastAPI(title="MMS-GPT API")
@@ -63,9 +64,11 @@ class QueryResponse(BaseModel):
     sql: str
     columns: list[str]
     rows: list[list]
-    chunks_used: list[str]       # legacy: just the keys
-    chunks_detail: list[ChunkDetail]  # rich: key + similarity + excerpt
-    rationale: str               # GPT-generated explanation of chunk selection
+    chunks_used: list[str]           # legacy: just the keys
+    chunks_detail: list[ChunkDetail] # rich: key + similarity + excerpt
+    rationale: str                   # GPT-generated explanation of chunk selection
+    attempts: int                    # 1 = first try, 2-3 = required auto-fix
+    fix_history: list[dict]          # [{attempt, error, sql}] for each failed attempt
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -157,6 +160,31 @@ Be specific about the chunk names."""
     return (resp.choices[0].message.content or "").strip()
 
 
+def build_fix_prompt(question: str, bad_sql: str, error: str, schema_context: str) -> str:
+    """Prompt GPT-4o to fix a broken SQL query given the Postgres error message."""
+    return f"""You are an expert PostgreSQL query fixer.
+The following SQL query failed with a database error. Fix it so it executes correctly.
+
+RULES:
+- Return ONLY the corrected raw SQL statement — no markdown fences, no explanation.
+- Do NOT change the intent of the query; only fix the syntax/logic error.
+- Always prefix every table with the 'planning.' schema.
+
+ORIGINAL QUESTION:
+{question}
+
+FAILED SQL:
+{bad_sql}
+
+POSTGRES ERROR:
+{error}
+
+SCHEMA CONTEXT (for reference):
+{schema_context}
+
+FIXED SQL:"""
+
+
 def run_query(sql: str) -> tuple[list[str], list[list]]:
     """Execute SQL; return (column_names, rows)."""
     conn = psycopg2.connect(DB_URL)
@@ -216,14 +244,46 @@ def query(req: QueryRequest):
         for c in chunks
     ]
 
-    # Step 7 – Execute SQL
-    try:
-        columns, rows = run_query(sql)
-    except Exception as e:
-        raise HTTPException(
-            status_code=422,
-            detail=f"SQL execution failed: {str(e)}\n\nGenerated SQL:\n{sql}",
-        )
+    # Step 7 – Execute SQL with auto-fix retry loop (up to MAX_SQL_RETRIES)
+    schema_context = "\n\n---\n\n".join(c["chunk_text"] for c in chunks)
+    fix_history: list[dict] = []
+    columns: list[str] = []
+    rows: list[list] = []
+    attempt = 0
+
+    for attempt in range(1, MAX_SQL_RETRIES + 1):
+        try:
+            columns, rows = run_query(sql)
+            break  # success — exit loop
+        except Exception as exc:
+            error_msg = str(exc)
+            fix_history.append({
+                "attempt": attempt,
+                "error": error_msg,
+                "sql": sql,
+            })
+
+            if attempt == MAX_SQL_RETRIES:
+                # All retries exhausted — surface error to client
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"SQL failed after {MAX_SQL_RETRIES} attempts.\n\n"
+                        f"Last error: {error_msg}\n\n"
+                        f"Last SQL:\n{sql}"
+                    ),
+                )
+
+            # Ask GPT-4o to fix the broken SQL
+            fix_completion = oai.chat.completions.create(
+                model="gpt-4o",
+                messages=[{
+                    "role": "user",
+                    "content": build_fix_prompt(req.question, sql, error_msg, schema_context),
+                }],
+                temperature=0,
+            )
+            sql = extract_sql(fix_completion.choices[0].message.content or "")
 
     return QueryResponse(
         sql=sql,
@@ -232,4 +292,6 @@ def query(req: QueryRequest):
         chunks_used=chunks_used,
         chunks_detail=chunks_detail,
         rationale=rationale,
+        attempts=attempt,
+        fix_history=fix_history,
     )

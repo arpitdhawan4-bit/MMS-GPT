@@ -14,6 +14,12 @@ interface ChunkDetail {
   full_text: string;
 }
 
+interface FixEntry {
+  attempt: number;
+  error: string;
+  sql: string;
+}
+
 interface QueryResult {
   sql: string;
   columns: string[];
@@ -21,6 +27,8 @@ interface QueryResult {
   chunks_used: string[];
   chunks_detail: ChunkDetail[];
   rationale: string;
+  attempts: number;
+  fix_history: FixEntry[];
 }
 
 export default function App() {
@@ -84,7 +92,11 @@ export default function App() {
             />
 
             {/* ② Generated SQL */}
-            <SqlDisplay sql={result.sql} />
+            <SqlDisplay
+              sql={result.sql}
+              attempts={result.attempts}
+              fixHistory={result.fix_history}
+            />
 
             {/* ③ Result table */}
             <ResultTable columns={result.columns} rows={result.rows} />
