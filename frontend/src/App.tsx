@@ -1,17 +1,26 @@
 import { useState } from "react";
 import QueryInput from "./components/QueryInput";
+import RagRationale from "./components/RagRationale";
 import SqlDisplay from "./components/SqlDisplay";
 import ResultTable from "./components/ResultTable";
-import ChunkBadges from "./components/ChunkBadges";
 import ErrorBanner from "./components/ErrorBanner";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+interface ChunkDetail {
+  key: string;
+  similarity: number;
+  excerpt: string;
+  full_text: string;
+}
 
 interface QueryResult {
   sql: string;
   columns: string[];
   rows: string[][];
   chunks_used: string[];
+  chunks_detail: ChunkDetail[];
+  rationale: string;
 }
 
 export default function App() {
@@ -67,13 +76,17 @@ export default function App() {
         {/* Results */}
         {result && (
           <div className="flex flex-col gap-6">
-            {/* RAG chunks used */}
-            <ChunkBadges chunks={result.chunks_used} />
 
-            {/* Generated SQL */}
+            {/* ① RAG Rationale — shown BEFORE the SQL */}
+            <RagRationale
+              rationale={result.rationale}
+              chunks={result.chunks_detail}
+            />
+
+            {/* ② Generated SQL */}
             <SqlDisplay sql={result.sql} />
 
-            {/* Result table */}
+            {/* ③ Result table */}
             <ResultTable columns={result.columns} rows={result.rows} />
           </div>
         )}

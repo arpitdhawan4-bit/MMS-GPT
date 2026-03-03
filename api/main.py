@@ -52,11 +52,20 @@ class QueryRequest(BaseModel):
     question: str
 
 
+class ChunkDetail(BaseModel):
+    key: str
+    similarity: float        # cosine similarity 0–1
+    excerpt: str             # first ~150 chars of the chunk text
+    full_text: str           # full chunk text
+
+
 class QueryResponse(BaseModel):
     sql: str
     columns: list[str]
     rows: list[list]
-    chunks_used: list[str]   # for transparency – which chunks were retrieved
+    chunks_used: list[str]       # legacy: just the keys
+    chunks_detail: list[ChunkDetail]  # rich: key + similarity + excerpt
+    rationale: str               # GPT-generated explanation of chunk selection
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -121,6 +130,33 @@ def extract_sql(raw: str) -> str:
     return raw.strip()
 
 
+def generate_rationale(question: str, chunks: list[dict]) -> str:
+    """Ask GPT-4o-mini to explain in plain English why each chunk was retrieved."""
+    chunk_list = "\n".join(
+        f"  {i+1}. \"{c['chunk_key']}\" (similarity {c['similarity']:.3f}) — {c['chunk_text'][:120].strip()}..."
+        for i, c in enumerate(chunks)
+    )
+    prompt = f"""A user asked: "{question}"
+
+To answer this, a RAG system retrieved the following {len(chunks)} schema chunks from a vector database
+(ranked by cosine similarity to the embedded question):
+
+{chunk_list}
+
+In 3-5 sentences, explain in plain English:
+1. Why these particular chunks were the most relevant to the question.
+2. What role each chunk plays in helping the SQL generator answer the question correctly.
+Be specific about the chunk names."""
+
+    resp = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+        max_tokens=350,
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 def run_query(sql: str) -> tuple[list[str], list[list]]:
     """Execute SQL; return (column_names, rows)."""
     conn = psycopg2.connect(DB_URL)
@@ -166,7 +202,21 @@ def query(req: QueryRequest):
     raw_sql = completion.choices[0].message.content or ""
     sql = extract_sql(raw_sql)
 
-    # Step 5 – Execute SQL
+    # Step 5 – Generate rationale (parallel-ish — uses gpt-4o-mini, fast)
+    rationale = generate_rationale(req.question, chunks)
+
+    # Step 6 – Build rich chunk details for the UI
+    chunks_detail = [
+        ChunkDetail(
+            key=c["chunk_key"],
+            similarity=round(float(c["similarity"]), 4),
+            excerpt=c["chunk_text"][:150].strip() + ("…" if len(c["chunk_text"]) > 150 else ""),
+            full_text=c["chunk_text"],
+        )
+        for c in chunks
+    ]
+
+    # Step 7 – Execute SQL
     try:
         columns, rows = run_query(sql)
     except Exception as e:
@@ -175,4 +225,11 @@ def query(req: QueryRequest):
             detail=f"SQL execution failed: {str(e)}\n\nGenerated SQL:\n{sql}",
         )
 
-    return QueryResponse(sql=sql, columns=columns, rows=rows, chunks_used=chunks_used)
+    return QueryResponse(
+        sql=sql,
+        columns=columns,
+        rows=rows,
+        chunks_used=chunks_used,
+        chunks_detail=chunks_detail,
+        rationale=rationale,
+    )
