@@ -182,6 +182,15 @@ RULES:
   CASE SIZE (3 levels: All → Packs/Bottle Case → leaves):
     Bridge map_product_case_size links to leaves only.
     For parent case size (Packs etc.): double-join attr_product_case_size.
+    CRITICAL — There is NO 'case_size_qty' or 'qty' column in attr_product_case_size.
+    Filter ONLY by name or code. Mapping for common user phrases:
+      "6-pack" / "case qty = 6"     → WHERE cs.name = '6-pack'   (code = 'CS_PACK_6')
+      "12-pack" / "case qty = 12"   → WHERE cs.name = '12-pack'  (code = 'CS_PACK_12')
+      "24-pack" / "case qty = 24"   → WHERE cs.name = '24-pack'  (code = 'CS_PACK_24')
+      "6 x 750ml" / "6 bottle case" → WHERE cs.name = '6 x 750ml' (code = 'CS_BTL_6X750')
+      "12 x 750ml"                  → WHERE cs.name = '12 x 750ml' (code = 'CS_BTL_12X750')
+      "24 x 355ml"                  → WHERE cs.name = '24 x 355ml' (code = 'CS_BTL_24X355')
+    NOTE: 'cs' alias refers to attr_product_case_size leaf join. Always set is_leaf = TRUE for direct leaf filter.
 
   GAAP/CASHFLOW (2 levels): All named categories ARE leaves — direct filter ok.
 
@@ -249,6 +258,10 @@ RULES:
   For region hierarchy queries, always use the double-join pattern:
     JOIN planning.attr_customer_region state_region ON mcr.region_attr_id = state_region.region_attr_id
     JOIN planning.attr_customer_region region_parent ON state_region.parent_id = region_parent.region_attr_id
+- CASE SIZE: The table attr_product_case_size has NO 'case_size_qty' or 'qty' column.
+  Filter by name only: '6-pack' (CS_PACK_6), '12-pack' (CS_PACK_12), '24-pack' (CS_PACK_24),
+  '6 x 750ml' (CS_BTL_6X750), '12 x 750ml' (CS_BTL_12X750), '24 x 355ml' (CS_BTL_24X355).
+  If you see 'case_size_qty' in the failed SQL, replace with: WHERE cs.name = '6-pack' (or appropriate name).
 
 ORIGINAL QUESTION:
 {question}
