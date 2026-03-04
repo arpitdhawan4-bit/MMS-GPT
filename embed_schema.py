@@ -179,13 +179,21 @@ To filter customers by channel:
     (
         "attr_customer_region",
         """Table: planning.attr_customer_region
-Purpose: Geographic region hierarchy for customers.
-Columns: region_attr_id, code, name, parent_id, level_num, is_leaf
-Values: REG_US (root), REG_WEST, REG_MIDWEST, REG_SOUTH, REG_NORTHEAST
+Purpose: Geographic region hierarchy for customers. 3-level parent-child tree.
+Columns: region_attr_id (PK), code, name, parent_id (FK -> self), level_num, is_leaf
+CRITICAL HIERARCHY (parent_id is a self-referencing FK):
+  Level 1 (root):    United States (region_attr_id=1, is_leaf=FALSE, parent_id=NULL)
+  Level 2 (regions): Northeast (id=5), West (id=2), Midwest (id=3), South (id=4) — all is_leaf=FALSE
+  Level 3 (states):  Connecticut,Maine,Massachusetts,NH,NJ,NY,PA,RI,Vermont -> Northeast
+                     Alaska,Arizona,California,Colorado,Hawaii,Idaho,Montana,Nevada,NM,Oregon,Utah,Washington,Wyoming -> West
+                     Illinois,Indiana,Iowa,Kansas,Michigan,Minnesota,Missouri,Nebraska,ND,Ohio,SD,Wisconsin -> Midwest
+                     Alabama,Arkansas,Delaware,DC,Florida,Georgia,Kentucky,Louisiana,Maryland,Mississippi,NC,Oklahoma,SC,Tennessee,Texas,Virginia,WV -> South
+                     All state rows have is_leaf=TRUE
 Bridge: planning.map_customer_region (customer_id, region_attr_id)
-To filter customers by region:
-  JOIN planning.map_customer_region mcr ON dc.customer_id = mcr.customer_id
-  JOIN planning.attr_customer_region acr ON mcr.region_attr_id = acr.region_attr_id"""
+IMPORTANT: planning.map_customer_region maps customers to LEAF nodes (individual states) ONLY.
+To filter by a region like 'Northeast', you MUST join attr_customer_region twice:
+  once for the leaf (state) and once for the parent (region), matching via parent_id.
+  DO NOT filter acr.is_leaf=TRUE when also filtering acr.name = 'Northeast' — Northeast is not a leaf."""
     ),
 
     # ── ATTRIBUTE: INDUSTRY ──────────────────────────────────────────────────
@@ -373,23 +381,74 @@ ORDER BY ds.sort_order;"""
 
     (
         "join_pattern_by_region",
-        """To get sales by customer region:
+        """To get sales broken down by leaf-level region (individual states):
 SELECT
-    acr.name AS region,
+    acr.name AS state,
     SUM(f.value) AS total_sales
 FROM planning.fact_planning f
-JOIN planning.dim_scenario        ds  ON f.scenario_id = ds.scenario_id
-JOIN planning.dim_year            dy  ON f.year_id = dy.year_id
-JOIN planning.dim_customer        dc  ON f.customer_id = dc.customer_id
-JOIN planning.dim_account         da  ON f.account_id = da.account_id
-JOIN planning.map_customer_region mcr ON dc.customer_id = mcr.customer_id
+JOIN planning.dim_scenario         ds  ON f.scenario_id = ds.scenario_id
+JOIN planning.dim_year             dy  ON f.year_id = dy.year_id
+JOIN planning.dim_customer         dc  ON f.customer_id = dc.customer_id
+JOIN planning.dim_account          da  ON f.account_id = da.account_id
+JOIN planning.map_customer_region  mcr ON dc.customer_id = mcr.customer_id
 JOIN planning.attr_customer_region acr ON mcr.region_attr_id = acr.region_attr_id
 WHERE ds.code = 'ACTUAL'
   AND dy.year_num = 2026
   AND da.code = 'REV_GROSS'
-  AND acr.is_leaf = TRUE
+  AND acr.is_leaf = TRUE   -- map_customer_region links to leaf (state-level) rows only
 GROUP BY acr.name
 ORDER BY total_sales DESC;"""
+    ),
+
+    (
+        "join_pattern_by_region_hierarchy",
+        """CRITICAL: To filter sales for a PARENT region (e.g. Northeast, West, Midwest, South),
+you MUST double-join attr_customer_region because map_customer_region maps to LEAF NODES (states) only.
+Parent regions like Northeast/West/Midwest/South have is_leaf=FALSE and appear in attr_customer_region,
+but NOT in map_customer_region rows (customers are always linked to state rows, not region rows).
+
+PATTERN 1 — Simple parent join (use when filtering by a specific named parent region):
+SELECT
+    region_parent.name AS region,
+    SUM(f.value) AS total_sales
+FROM planning.fact_planning f
+JOIN planning.dim_scenario         ds           ON f.scenario_id = ds.scenario_id
+JOIN planning.dim_year             dy           ON f.year_id = dy.year_id
+JOIN planning.dim_period           dp           ON f.period_id = dp.period_id
+JOIN planning.dim_customer         dc           ON f.customer_id = dc.customer_id
+JOIN planning.dim_account          da           ON f.account_id = da.account_id
+JOIN planning.map_customer_region  mcr          ON dc.customer_id = mcr.customer_id
+JOIN planning.attr_customer_region state_region ON mcr.region_attr_id = state_region.region_attr_id  -- leaf (state)
+JOIN planning.attr_customer_region region_parent ON state_region.parent_id = region_parent.region_attr_id  -- parent (Northeast etc)
+WHERE ds.code = 'ACTUAL'
+  AND dy.year_num = 2025
+  AND dp.month_name = 'January'
+  AND da.code = 'REV_GROSS'
+  AND region_parent.name = 'Northeast'   -- filter on PARENT region name
+GROUP BY region_parent.name
+ORDER BY total_sales DESC;
+
+PATTERN 2 — Recursive CTE (use when region depth is unknown or you want all descendants):
+WITH region_tree AS (
+    SELECT region_attr_id FROM planning.attr_customer_region WHERE name = 'Northeast'
+    UNION ALL
+    SELECT child.region_attr_id
+    FROM planning.attr_customer_region child
+    JOIN region_tree rt ON child.parent_id = rt.region_attr_id
+)
+SELECT SUM(f.value) AS total_sales
+FROM planning.fact_planning f
+JOIN planning.dim_scenario         ds  ON f.scenario_id = ds.scenario_id
+JOIN planning.dim_year             dy  ON f.year_id = dy.year_id
+JOIN planning.dim_customer         dc  ON f.customer_id = dc.customer_id
+JOIN planning.dim_account          da  ON f.account_id = da.account_id
+JOIN planning.map_customer_region  mcr ON dc.customer_id = mcr.customer_id
+WHERE ds.code = 'ACTUAL'
+  AND dy.year_num = 2025
+  AND da.code = 'REV_GROSS'
+  AND mcr.region_attr_id IN (SELECT region_attr_id FROM region_tree);
+
+NEVER do: acr.name = 'Northeast' AND acr.is_leaf = TRUE  -- Northeast is NOT a leaf, this returns 0 rows."""
     ),
 
     (

@@ -114,6 +114,14 @@ RULES:
 - Limit result rows to {MAX_ROWS} using LIMIT if the query could return many rows.
 - Use SUM(f.value) for aggregation on fact_planning.
 - Always alias aggregated columns clearly (e.g. AS total_sales).
+- HIERARCHY RULE: attr_customer_region, attr_customer_channel, attr_customer_industry, and
+  attr_product_* tables all have parent-child hierarchies via parent_id.
+  The bridge tables (map_customer_region, map_customer_channel, etc.) ONLY link to LEAF nodes.
+  When the user asks about a non-leaf parent (e.g. 'Northeast', 'West', 'Beer'),
+  you MUST double-join the attr table: first alias for the leaf (from the bridge),
+  second alias for the parent (via leaf.parent_id = parent.region_attr_id), then filter on parent.name.
+  NEVER combine attr.name = '<parent>' AND attr.is_leaf = TRUE — parents are NOT leaves.
+
 
 SCHEMA CONTEXT (retrieved chunks):
 {context}
