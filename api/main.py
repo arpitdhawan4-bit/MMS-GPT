@@ -117,10 +117,15 @@ RULES:
 - HIERARCHY RULE: attr_customer_region, attr_customer_channel, attr_customer_industry, and
   attr_product_* tables all have parent-child hierarchies via parent_id.
   The bridge tables (map_customer_region, map_customer_channel, etc.) ONLY link to LEAF nodes.
-  When the user asks about a non-leaf parent (e.g. 'Northeast', 'West', 'Beer'),
-  you MUST double-join the attr table: first alias for the leaf (from the bridge),
-  second alias for the parent (via leaf.parent_id = parent.region_attr_id), then filter on parent.name.
+  When the user asks about a non-leaf parent (e.g. 'Northeast', 'West', 'Beer') OR asks for
+  'children of' a parent, you MUST double-join the attr table:
+    alias 1 (e.g. state_region): JOIN attr_customer_region ON mcr.region_attr_id = state_region.region_attr_id
+    alias 2 (e.g. region_parent): JOIN attr_customer_region ON state_region.parent_id = region_parent.region_attr_id
+  To get TOTAL for a parent region: filter on region_parent.name = 'Northeast', GROUP BY region_parent.name
+  To list CHILDREN of a parent region: filter on region_parent.name = 'Northeast', GROUP BY state_region.name
   NEVER combine attr.name = '<parent>' AND attr.is_leaf = TRUE — parents are NOT leaves.
+- NO RECURSIVE CTEs: NEVER use WITH RECURSIVE in any query. The database does not support it.
+  Always use the double-join approach for parent-child hierarchy traversal.
 
 
 SCHEMA CONTEXT (retrieved chunks):
@@ -177,6 +182,10 @@ RULES:
 - Return ONLY the corrected raw SQL statement — no markdown fences, no explanation.
 - Do NOT change the intent of the query; only fix the syntax/logic error.
 - Always prefix every table with the 'planning.' schema.
+- NEVER use WITH RECURSIVE or any recursive CTE — the database does not support it.
+  For region hierarchy queries, always use the double-join pattern:
+    JOIN planning.attr_customer_region state_region ON mcr.region_attr_id = state_region.region_attr_id
+    JOIN planning.attr_customer_region region_parent ON state_region.parent_id = region_parent.region_attr_id
 
 ORIGINAL QUESTION:
 {question}
