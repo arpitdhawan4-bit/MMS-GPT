@@ -155,11 +155,17 @@ RULES:
       "Sales" with NO qualifier (default)  → WHERE da.code = 'REV_GROSS'  (1 account)
       *** "TOTAL REVENUE" / "all revenue" / "revenue by month/industry/channel" /
           "all revenue accounts" / "all children of revenue" / "revenue breakdown" ***
-          → MUST use double-join to get ALL 3 REV children simultaneously:
-            JOIN planning.dim_account da        ON f.account_id = da.account_id
-            JOIN planning.dim_account da_parent ON da.parent_id = da_parent.account_id
-            WHERE da_parent.code = 'REV'
-            AND GROUP BY da.name (so each child: Gross Sales, Discounts, Net Sales is a row)
+          → MUST use double-join: WHERE da_parent.code = 'REV'
+          → TWO sub-cases:
+            a) "BREAKDOWN / each account / per account": include da.name in SELECT + GROUP BY
+               → produces 3 rows per period (Gross Sales, Discounts, Net Sales)
+            b) "SUM / total / combined / aggregate / sum of all children":
+               DO NOT include da.name in SELECT or GROUP BY at all
+               → collapses all 3 children into ONE number per period/industry/etc.
+               Example: "sum of all children of revenue by month by industry"
+               → SELECT dp.month_name, aci.name, SUM(f.value) AS total_revenue
+                  ... WHERE da_parent.code = 'REV'
+                  GROUP BY dp.period_sort, dp.month_name, aci.name
           DO NOT use da.code = 'REV_GROSS' when user says "total revenue" — that is WRONG.
       "Total COGS" / "all COGS" / "cost of goods" → double-join, da_parent.code = 'COGS'
       "Operating expenses" / "all OPEX"            → double-join, da_parent.code = 'OPEX'

@@ -648,8 +648,8 @@ KEYWORD MAPPING:
 - "total COGS" / "COGS breakdown" / "cost of goods"    → da_parent.code = 'COGS' (gets COGS_MAT + COGS_FRT + COGS_TOT)
 - "total OPEX" / "operating expenses" / "opex"         → da_parent.code = 'OPEX' (gets OPEX_MKT + OPEX_PAY + OPEX_RENT + OPEX_UTIL)
 
-PATTERN 0 — Total revenue (ALL 3 REV children) by month by industry (MOST IMPORTANT):
--- Use this when user asks for "total revenue by month" or "revenue by industry" or "all revenue accounts"
+PATTERN 0a — BREAKDOWN of all REV children by month by industry (shows Gross Sales / Discounts / Net Sales separately):
+-- Use when user asks for "total revenue by month" / "revenue accounts by industry" / "each revenue line"
 SELECT
     dp.month_name,
     aci.name AS industry,
@@ -662,13 +662,36 @@ JOIN planning.dim_period     dp        ON f.period_id   = dp.period_id
 JOIN planning.dim_customer   dc        ON f.customer_id = dc.customer_id
 JOIN planning.dim_account    da        ON f.account_id  = da.account_id
 JOIN planning.dim_account    da_parent ON da.parent_id  = da_parent.account_id
-JOIN planning.map_customer_industry mci ON dc.customer_id     = mci.customer_id
+JOIN planning.map_customer_industry mci ON dc.customer_id      = mci.customer_id
 JOIN planning.attr_customer_industry aci ON mci.industry_attr_id = aci.industry_attr_id
 WHERE ds.code = 'ACTUAL'
   AND dy.year_num = 2025
   AND da_parent.code = 'REV'
 GROUP BY dp.period_sort, dp.month_name, aci.name, da.account_id, da.name
 ORDER BY dp.period_sort, aci.name, da.account_id
+LIMIT 500;
+
+PATTERN 0b — SUM of all REV children combined into one total per month per industry (SINGLE total row):
+-- Use when user asks for "SUM of all children of revenue" / "combined revenue total" / "aggregate revenue"
+-- KEY: do NOT include da.name in SELECT or GROUP BY — that collapses all 3 children into one number
+SELECT
+    dp.month_name,
+    aci.name AS industry,
+    SUM(f.value) AS total_revenue
+FROM planning.fact_planning f
+JOIN planning.dim_scenario   ds        ON f.scenario_id = ds.scenario_id
+JOIN planning.dim_year       dy        ON f.year_id     = dy.year_id
+JOIN planning.dim_period     dp        ON f.period_id   = dp.period_id
+JOIN planning.dim_customer   dc        ON f.customer_id = dc.customer_id
+JOIN planning.dim_account    da        ON f.account_id  = da.account_id
+JOIN planning.dim_account    da_parent ON da.parent_id  = da_parent.account_id
+JOIN planning.map_customer_industry mci ON dc.customer_id      = mci.customer_id
+JOIN planning.attr_customer_industry aci ON mci.industry_attr_id = aci.industry_attr_id
+WHERE ds.code = 'ACTUAL'
+  AND dy.year_num = 2025
+  AND da_parent.code = 'REV'
+GROUP BY dp.period_sort, dp.month_name, aci.name
+ORDER BY dp.period_sort, aci.name
 LIMIT 500;
 
 PATTERN 1 — Total for an account group (e.g. total COGS):
