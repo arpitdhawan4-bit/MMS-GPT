@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "group": "account_x_industry_x_time",
+    "question": "What is the sum of all children of revenue by month for the Grocery industry in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "month_name", "2025"],
+    "sql_must_not_contain": ["REV_GROSS\" AND", "WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 2,
+    "group": "account_x_industry_x_time",
+    "question": "Show me COGS breakdown by month for Restaurant industry customers in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "COGS", "month_name", "2025", "Restaurant"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 3,
+    "group": "account_x_industry_x_time",
+    "question": "What were total operating expenses for Distributor customers in Q1 and Q2 2026?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "OPEX", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 4,
+    "group": "account_x_industry_x_time",
+    "question": "Give me gross sales vs discounts side by side by month for Convenience industry in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "REV_DISC", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 5,
+    "group": "account_x_industry_x_time",
+    "question": "How did net sales trend month-over-month for Hotel / Resort industry customers in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_NET", "month_name", "2025", "Hotel"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 6,
+    "group": "account_x_industry_x_time",
+    "question": "Compare actual vs budget total revenue by industry for Q1 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["ACTUAL", "BUDGET", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 7,
+    "group": "account_x_industry_x_time",
+    "question": "What was the sum of all revenue children for each industry in January 2026?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "January", "2026"],
+    "sql_must_not_contain": ["REV_GROSS\" AND", "WITH RECURSIVE"],
+    "expected_cols_include": ["industry"],
+    "min_row_count": 1
+  },
+  {
+    "id": 8,
+    "group": "account_x_industry_x_time",
+    "question": "Show me the full revenue and COGS accounts for the Liquor Retail industry by month in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 9,
+    "group": "account_x_region_x_time",
+    "question": "What are the total sales for all children of the Northeast region by month in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["state_region", "region_parent", "Northeast", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 10,
+    "group": "account_x_region_x_time",
+    "question": "Give me sum of all revenue accounts for each state in the West region for 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "state_region", "region_parent", "West", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["state"],
+    "min_row_count": 1
+  },
+  {
+    "id": 11,
+    "group": "account_x_region_x_time",
+    "question": "Compare gross sales for Northeast vs South region by month for 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["state_region", "region_parent", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 12,
+    "group": "account_x_region_x_time",
+    "question": "Which states in the Midwest had the highest COGS in Q2 2025?",
+    "expected_attempt_max": 2,
+    "sql_must_contain": ["da_parent", "COGS", "state_region", "region_parent", "Midwest", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["state"],
+    "min_row_count": 1
+  },
+  {
+    "id": 13,
+    "group": "account_x_region_x_time",
+    "question": "Show actual vs budget gross sales by region for 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "ACTUAL", "BUDGET", "region_parent", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 14,
+    "group": "account_x_region_x_time",
+    "question": "What were total discounts by state in the South region for Q4 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_DISC", "state_region", "region_parent", "South", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["state"],
+    "min_row_count": 1
+  },
+  {
+    "id": 15,
+    "group": "account_x_product_x_time",
+    "question": "Give me sum of all revenue children for Beer, Wine, and Spirits categories by month in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "dpr_cat", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE", "REV_GROSS\" AND"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 16,
+    "group": "account_x_product_x_time",
+    "question": "What are COGS by product category for 2026?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "COGS", "dpr_cat", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["category"],
+    "min_row_count": 1
+  },
+  {
+    "id": 17,
+    "group": "account_x_product_x_time",
+    "question": "Show me gross sales by brand within the Spirits category by quarter for 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_brand", "dpr_cat", "Spirits", "quarter", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["brand"],
+    "min_row_count": 1
+  },
+  {
+    "id": 18,
+    "group": "account_x_product_x_time",
+    "question": "Compare actual vs budget gross sales for the Beer category by month in 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "ACTUAL", "BUDGET", "dpr_cat", "Beer", "month_name", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 19,
+    "group": "account_x_product_x_time",
+    "question": "What were operating expenses for Fermented products in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "OPEX", "parent_prc", "Fermented", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 20,
+    "group": "account_x_product_x_time",
+    "question": "Show net sales for Bottle-packaged products vs Keg-packaged products by month in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_NET", "parent_pkg", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 21,
+    "group": "account_x_channel_x_time",
+    "question": "What is the sum of all revenue accounts for Off-Premise customers by month in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "leaf_ch", "parent_ch", "Off-Premise", "month_name", "2025"],
+    "sql_must_not_contain": ["REV_GROSS\" AND", "WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 22,
+    "group": "account_x_channel_x_time",
+    "question": "Break down gross sales by all children of On-Premise channel for Q1 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "leaf_ch", "parent_ch", "On-Premise", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["channel"],
+    "min_row_count": 1
+  },
+  {
+    "id": 23,
+    "group": "account_x_channel_x_time",
+    "question": "Compare actual vs budget COGS for On-Premise vs Off-Premise channels in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "COGS", "ACTUAL", "BUDGET", "parent_ch", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 24,
+    "group": "account_x_channel_x_time",
+    "question": "Which channel had the highest discounts in 2026 by month?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_DISC", "month_name", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 25,
+    "group": "account_x_channel_x_time",
+    "question": "Give me net sales for E-Commerce customers by month for 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_NET", "parent_ch", "E-Commerce", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 26,
+    "group": "account_x_product_x_region",
+    "question": "What were Beer category gross sales in the Northeast and West regions for 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_cat", "Beer", "region_parent", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 27,
+    "group": "account_x_product_x_region",
+    "question": "Show me sum of all revenue children for Wine products in each state of the West region for Q1 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "dpr_cat", "Wine", "state_region", "region_parent", "West", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["state"],
+    "min_row_count": 1
+  },
+  {
+    "id": 28,
+    "group": "account_x_product_x_region",
+    "question": "Which product categories are selling the most in the South region by month for 2026?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["dpr_cat", "region_parent", "South", "month_name", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name", "category"],
+    "min_row_count": 1
+  },
+  {
+    "id": 29,
+    "group": "account_x_product_x_region",
+    "question": "Compare Spirits and Beer COGS for the Midwest region in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "COGS", "dpr_cat", "region_parent", "Midwest", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 30,
+    "group": "account_x_product_x_region",
+    "question": "Show gross sales by state for Beer products in Q2 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_cat", "Beer", "attr_customer_region", "state_region", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["state"],
+    "min_row_count": 1
+  },
+  {
+    "id": 31,
+    "group": "account_x_product_x_channel",
+    "question": "What were Keg product sales through On-Premise channels by month for 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["attr_product_packaging", "Keg", "parent_ch", "On-Premise", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 32,
+    "group": "account_x_product_x_channel",
+    "question": "Compare Beer vs Wine gross sales for Off-Premise and E-Commerce channels in 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_cat", "parent_ch", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 33,
+    "group": "account_x_product_x_channel",
+    "question": "Show me sum of all revenue children for Fermented products in the Off-Premise channel by month in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "attr_product_process", "Fermented", "parent_ch", "Off-Premise", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 34,
+    "group": "account_x_product_x_channel",
+    "question": "Which channels are driving the most 6-pack and 12-pack sales in 2026?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 35,
+    "group": "customer_hierarchy_x_account_x_time",
+    "question": "What is the total revenue for Anderson Beverage Group by month in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "dc_dist", "dc_grp", "Anderson Beverage Group", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 36,
+    "group": "customer_hierarchy_x_account_x_time",
+    "question": "Break down gross sales by distributor for Collins Beverage Group in Q1 2026",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dc_dist", "dc_grp", "Collins Beverage Group", "2026"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["distributor"],
+    "min_row_count": 1
+  },
+  {
+    "id": 37,
+    "group": "customer_hierarchy_x_account_x_time",
+    "question": "Compare actual vs budget net sales for customer groups in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_NET", "ACTUAL", "BUDGET", "dc_grp", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 38,
+    "group": "customer_hierarchy_x_account_x_time",
+    "question": "Show sum of all revenue accounts for each customer group by quarter in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "dc_grp", "quarter", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 39,
+    "group": "customer_hierarchy_x_account_x_time",
+    "question": "Which distributors in the Bennett Beverage Group had the highest gross sales in 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dc_dist", "dc_grp", "Bennett Beverage Group", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["distributor"],
+    "min_row_count": 1
+  },
+  {
+    "id": 40,
+    "group": "complex_5d",
+    "question": "Show me gross sales for Beer products in the Northeast region through Off-Premise channel by month in 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_cat", "Beer", "region_parent", "Northeast", "parent_ch", "Off-Premise", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 41,
+    "group": "complex_5d",
+    "question": "What is the sum of all revenue children for Anderson Beverage Group broken down by product category for 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "dc_grp", "Anderson Beverage Group", "dpr_cat", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["category"],
+    "min_row_count": 1
+  },
+  {
+    "id": 42,
+    "group": "complex_5d",
+    "question": "Compare actual vs budget gross sales for Wine products in the South region by month for 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "ACTUAL", "BUDGET", "dpr_cat", "Wine", "region_parent", "South", "month_name", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": ["month_name"],
+    "min_row_count": 1
+  },
+  {
+    "id": 43,
+    "group": "complex_5d",
+    "question": "Which industries are buying the most Beer and Spirits through On-Premise channels? Give me 2025 data by quarter",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["dpr_cat", "parent_ch", "On-Premise", "quarter", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 44,
+    "group": "complex_5d",
+    "question": "Show me sum of all revenue children for Grocery and Convenience industry customers in the West region for Q1 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["da_parent", "REV", "attr_customer_industry", "region_parent", "West", "Grocery", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 45,
+    "group": "complex_5d",
+    "question": "For Distributor type customers, which product categories are driving the most discounts in 2025 by region?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_DISC", "dpr_cat", "region_parent", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 46,
+    "group": "complex_5d",
+    "question": "Give me Actual vs Plan 1 net sales comparison for Bottle-packaged products by customer group for Q2 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_NET", "ACTUAL", "attr_product_packaging", "Bottle", "dc_grp", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 47,
+    "group": "nlp_variation",
+    "question": "What were gross sales for Beer products in the Northeast region in June 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["REV_GROSS", "dpr_cat", "Beer", "region_parent", "Northeast", "June", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 48,
+    "group": "nlp_variation",
+    "question": "How much did we sell in Beer across the Northeast in Jan 2025?",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["dpr_cat", "Beer", "region_parent", "Northeast", "January", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 49,
+    "group": "nlp_variation",
+    "question": "Please provide revenue from Beer products for customers in the Northeast region, for the month of January, year 2025",
+    "expected_attempt_max": 1,
+    "sql_must_contain": ["dpr_cat", "Beer", "region_parent", "Northeast", "January", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  },
+  {
+    "id": 50,
+    "group": "nlp_variation",
+    "question": "Total gross revenue for Beer in Northeast region January 2025",
+    "expected_attempt_max": 2,
+    "sql_must_contain": ["Beer", "Northeast", "January", "2025"],
+    "sql_must_not_contain": ["WITH RECURSIVE"],
+    "expected_cols_include": [],
+    "min_row_count": 1
+  }
+]
