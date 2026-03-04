@@ -114,18 +114,61 @@ RULES:
 - Limit result rows to {MAX_ROWS} using LIMIT if the query could return many rows.
 - Use SUM(f.value) for aggregation on fact_planning.
 - Always alias aggregated columns clearly (e.g. AS total_sales).
-- HIERARCHY RULE: attr_customer_region, attr_customer_channel, attr_customer_industry, and
-  attr_product_* tables all have parent-child hierarchies via parent_id.
-  The bridge tables (map_customer_region, map_customer_channel, etc.) ONLY link to LEAF nodes.
-  When the user asks about a non-leaf parent (e.g. 'Northeast', 'West', 'Beer') OR asks for
-  'children of' a parent, you MUST double-join the attr table:
-    alias 1 (e.g. state_region): JOIN attr_customer_region ON mcr.region_attr_id = state_region.region_attr_id
-    alias 2 (e.g. region_parent): JOIN attr_customer_region ON state_region.parent_id = region_parent.region_attr_id
-  To get TOTAL for a parent region: filter on region_parent.name = 'Northeast', GROUP BY region_parent.name
-  To list CHILDREN of a parent region: filter on region_parent.name = 'Northeast', GROUP BY state_region.name
-  NEVER combine attr.name = '<parent>' AND attr.is_leaf = TRUE — parents are NOT leaves.
+- HIERARCHY RULE — fact_planning ALWAYS links to LEAF nodes only (is_leaf=TRUE).
+  ALL dimension and attribute tables have parent-child hierarchies via parent_id.
+  Querying by a NON-LEAF parent ALWAYS requires a double (or triple) join on the same table.
+  The specific rules per table:
+
+  REGION (3 levels: United States → Northeast/West/Midwest/South → States):
+    Bridge map_customer_region links to LEAF states only.
+    For parent region (Northeast etc.):
+      JOIN attr_customer_region state_region ON mcr.region_attr_id = state_region.region_attr_id
+      JOIN attr_customer_region region_parent ON state_region.parent_id = region_parent.region_attr_id
+      WHERE region_parent.name = 'Northeast'
+
+  CHANNEL (3 levels: All → On-Premise/Off-Premise/E-Commerce → leaf channels):
+    Bridge map_customer_channel links to LEAF channels only (Bars, Grocery, etc.).
+    For parent channel (Off-Premise etc.):
+      JOIN attr_customer_channel leaf_ch   ON mcc.channel_attr_id = leaf_ch.channel_attr_id
+      JOIN attr_customer_channel parent_ch ON leaf_ch.parent_id   = parent_ch.channel_attr_id
+      WHERE parent_ch.name = 'Off-Premise'
+
+  INDUSTRY (2 levels: All → leaf industries): All named industries ARE leaves — direct filter ok.
+
+  PRODUCT (3 levels: Category → Brand → SKU):
+    fact_planning links to SKU leaves only. Beer/Wine/Spirits are categories (NOT leaves).
+    For category (Beer): triple-join dim_product three times (dpr, dpr_brand, dpr_cat)
+    For brand: double-join dim_product (dpr, dpr_brand)
+    NEVER filter dim_product.name = 'Beer' without hierarchy joins.
+
+  CUSTOMER (3 levels: Group → Distributor → Individual):
+    fact_planning links to individual customer leaves only.
+    For group: triple-join dim_customer (dc, dc_dist, dc_grp)
+    For distributor: double-join dim_customer (dc, dc_dist)
+
+  ACCOUNT (2 levels: REV/COGS/OPEX → leaf accounts):
+    fact_planning links to leaf accounts (REV_GROSS, COGS_MAT, etc.).
+    For account group (COGS): double-join dim_account (da, da_parent)
+    For specific leaf: direct filter on da.code = 'REV_GROSS' is fine.
+
+  PACKAGING (3 levels: All → Bottle/Can/Keg/Box → leaves):
+    Bridge map_product_packaging links to leaves only.
+    For parent packaging (Bottle etc.): double-join attr_product_packaging.
+
+  PROCESS (3 levels: All → Distilled/Fermented/Blended → leaves):
+    Bridge map_product_process links to leaves only.
+    For parent process (Distilled etc.): double-join attr_product_process.
+
+  CASE SIZE (3 levels: All → Packs/Bottle Case → leaves):
+    Bridge map_product_case_size links to leaves only.
+    For parent case size (Packs etc.): double-join attr_product_case_size.
+
+  GAAP/CASHFLOW (2 levels): All named categories ARE leaves — direct filter ok.
+
 - NO RECURSIVE CTEs: NEVER use WITH RECURSIVE in any query. The database does not support it.
-  Always use the double-join approach for parent-child hierarchy traversal.
+  Always use the double/triple-join approach for parent-child hierarchy traversal.
+- NEVER combine a parent node name filter AND is_leaf = TRUE — parents are NOT leaves.
+- To list CHILDREN of a parent: GROUP BY the leaf alias column (not the parent alias).
 
 
 SCHEMA CONTEXT (retrieved chunks):
