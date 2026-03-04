@@ -147,9 +147,23 @@ RULES:
     For distributor: double-join dim_customer (dc, dc_dist)
 
   ACCOUNT (2 levels: REV/COGS/OPEX → leaf accounts):
-    fact_planning links to leaf accounts (REV_GROSS, COGS_MAT, etc.).
-    For account group (COGS): double-join dim_account (da, da_parent)
-    For specific leaf: direct filter on da.code = 'REV_GROSS' is fine.
+    fact_planning links to LEAF accounts only (REV_GROSS, COGS_MAT, etc.).
+    CRITICAL — distinguish intent carefully:
+      "Gross Sales" or "gross revenue"     → WHERE da.code = 'REV_GROSS'  (1 account)
+      "Net Sales" or "net revenue"         → WHERE da.code = 'REV_NET'    (1 account)
+      "Discounts"                          → WHERE da.code = 'REV_DISC'   (1 account)
+      "Sales" with NO qualifier (default)  → WHERE da.code = 'REV_GROSS'  (1 account)
+      *** "TOTAL REVENUE" / "all revenue" / "revenue by month/industry/channel" /
+          "all revenue accounts" / "all children of revenue" / "revenue breakdown" ***
+          → MUST use double-join to get ALL 3 REV children simultaneously:
+            JOIN planning.dim_account da        ON f.account_id = da.account_id
+            JOIN planning.dim_account da_parent ON da.parent_id = da_parent.account_id
+            WHERE da_parent.code = 'REV'
+            AND GROUP BY da.name (so each child: Gross Sales, Discounts, Net Sales is a row)
+          DO NOT use da.code = 'REV_GROSS' when user says "total revenue" — that is WRONG.
+      "Total COGS" / "all COGS" / "cost of goods" → double-join, da_parent.code = 'COGS'
+      "Operating expenses" / "all OPEX"            → double-join, da_parent.code = 'OPEX'
+    da.code = 'REV', 'COGS', 'OPEX' NEVER exist as leaf codes — these are group nodes.
 
   PACKAGING (3 levels: All → Bottle/Can/Keg/Box → leaves):
     Bridge map_product_packaging links to leaves only.

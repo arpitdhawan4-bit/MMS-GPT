@@ -90,13 +90,22 @@ HIERARCHY (fact_planning links to LEAF accounts only):
     OPEX_RENT = Rent          (parent: OPEX)
     OPEX_UTIL = Utilities     (parent: OPEX)
 
-RULES:
-- For a specific leaf account: JOIN dim_account da ON f.account_id = da.account_id WHERE da.code = 'REV_GROSS'
-- For all children of a group (e.g. all COGS items), use double-join:
-    JOIN planning.dim_account da ON f.account_id = da.account_id
+ACCOUNT QUERY RULES:
+- "Gross Sales" or "gross revenue":                 WHERE da.code = 'REV_GROSS'
+- "Net Sales" or "net revenue":                     WHERE da.code = 'REV_NET'
+- "Discounts":                                      WHERE da.code = 'REV_DISC'
+- "Sales" with no qualifier (default):              WHERE da.code = 'REV_GROSS'
+- "Total Revenue" / "all revenue" / "revenue accounts" / "all revenue children":
+    Use double-join to get ALL 3 REV children (REV_GROSS + REV_DISC + REV_NET):
+    JOIN planning.dim_account da        ON f.account_id = da.account_id
     JOIN planning.dim_account da_parent ON da.parent_id = da_parent.account_id
-    WHERE da_parent.code = 'COGS'
-- NEVER use da.code = 'COGS' AND da.is_leaf = TRUE — COGS is a group node, not a leaf."""
+    WHERE da_parent.code = 'REV'
+    -- This returns 3 rows per period (one per leaf); GROUP BY and include da.name to break them down.
+- "Total COGS" / "all COGS" / "COGS breakdown":
+    Use double-join with da_parent.code = 'COGS' to get Materials + Freight + Total COGS
+- "All OPEX" / "operating expenses":
+    Use double-join with da_parent.code = 'OPEX' to get Marketing + Payroll + Rent + Utilities
+- NEVER use da.code = 'REV' or da.code = 'COGS' or da.code = 'OPEX' — these are group nodes, not leaves."""
     ),
 
     # ── DIM_CUSTOMER ─────────────────────────────────────────────────────────
@@ -633,6 +642,34 @@ GROUP BY dpr_brand.name ORDER BY total_sales DESC;"""
 REV/COGS/OPEX are account group nodes (is_leaf=FALSE).
 To query all items under COGS or all Revenue accounts, use double-join on dim_account.
 NEVER use WITH RECURSIVE CTEs.
+
+KEYWORD MAPPING:
+- "total revenue" / "all revenue" / "revenue breakdown" → da_parent.code = 'REV'  (gets REV_GROSS + REV_DISC + REV_NET)
+- "total COGS" / "COGS breakdown" / "cost of goods"    → da_parent.code = 'COGS' (gets COGS_MAT + COGS_FRT + COGS_TOT)
+- "total OPEX" / "operating expenses" / "opex"         → da_parent.code = 'OPEX' (gets OPEX_MKT + OPEX_PAY + OPEX_RENT + OPEX_UTIL)
+
+PATTERN 0 — Total revenue (ALL 3 REV children) by month by industry (MOST IMPORTANT):
+-- Use this when user asks for "total revenue by month" or "revenue by industry" or "all revenue accounts"
+SELECT
+    dp.month_name,
+    aci.name AS industry,
+    da.name  AS account,
+    SUM(f.value) AS total_value
+FROM planning.fact_planning f
+JOIN planning.dim_scenario   ds        ON f.scenario_id = ds.scenario_id
+JOIN planning.dim_year       dy        ON f.year_id     = dy.year_id
+JOIN planning.dim_period     dp        ON f.period_id   = dp.period_id
+JOIN planning.dim_customer   dc        ON f.customer_id = dc.customer_id
+JOIN planning.dim_account    da        ON f.account_id  = da.account_id
+JOIN planning.dim_account    da_parent ON da.parent_id  = da_parent.account_id
+JOIN planning.map_customer_industry mci ON dc.customer_id     = mci.customer_id
+JOIN planning.attr_customer_industry aci ON mci.industry_attr_id = aci.industry_attr_id
+WHERE ds.code = 'ACTUAL'
+  AND dy.year_num = 2025
+  AND da_parent.code = 'REV'
+GROUP BY dp.period_sort, dp.month_name, aci.name, da.account_id, da.name
+ORDER BY dp.period_sort, aci.name, da.account_id
+LIMIT 500;
 
 PATTERN 1 — Total for an account group (e.g. total COGS):
 SELECT da_parent.name AS account_group, SUM(f.value) AS total_value
