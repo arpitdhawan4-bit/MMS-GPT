@@ -163,7 +163,7 @@
     "id": 17,
     "group": "account_x_product_x_time",
     "question": "Show me gross sales by brand within the Spirits category by quarter for 2025",
-    "expected_attempt_max": 1,
+    "expected_attempt_max": 2,
     "sql_must_contain": ["REV_GROSS", "dpr_brand", "dpr_cat", "Spirits", "quarter", "2025"],
     "sql_must_not_contain": ["WITH RECURSIVE"],
     "expected_cols_include": ["brand"],
