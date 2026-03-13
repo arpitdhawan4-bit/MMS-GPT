@@ -859,6 +859,42 @@ def bulk_update_grid_data(grid_name: str, req: BulkUpdateRequest):
         conn.close()
 
 
+@app.get("/api/nav")
+def get_nav():
+    """
+    Return the navigation tree from planning.nav_items as nested JSON.
+    Only active items are included, ordered by sort_order.
+    The flat rows are assembled into a parent-child tree in Python before
+    returning, so the Sidebar can render them directly without any client-side
+    assembly logic.
+    """
+    conn = psycopg2.connect(DB_URL)
+    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur.execute("""
+            SELECT nav_id, parent_id, label, path, icon_key, sort_order
+            FROM   planning.nav_items
+            WHERE  is_active = TRUE
+            ORDER  BY sort_order, nav_id
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+    finally:
+        cur.close()
+        conn.close()
+
+    # Build nested tree: index all items, then attach children to their parent
+    by_id: dict[int, dict] = {r["nav_id"]: {**r, "children": []} for r in rows}
+    roots: list[dict] = []
+    for item in by_id.values():
+        pid = item["parent_id"]
+        if pid is None:
+            roots.append(item)
+        elif pid in by_id:
+            by_id[pid]["children"].append(item)
+
+    return roots
+
+
 @app.post("/api/paginate", response_model=PaginateResponse)
 def paginate(req: PaginateRequest):
     """

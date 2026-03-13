@@ -35,28 +35,28 @@ interface ModalProps {
 function RoleSwitchModal({ onSaveAll, onDiscardAll, onCancel, saving }: ModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-        <h3 className="text-white font-semibold text-base mb-2">Unsaved Changes</h3>
-        <p className="text-gray-300 text-sm mb-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+        <h3 className="text-gray-900 dark:text-white font-semibold text-base mb-2">Unsaved Changes</h3>
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
           One or more grids have unsaved changes. What would you like to do before switching roles?
         </p>
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-1.5 rounded border border-gray-600 bg-gray-700 text-gray-300 text-xs hover:bg-gray-600 transition-colors"
+            className="px-4 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onDiscardAll}
-            className="px-4 py-1.5 rounded border border-red-700 bg-red-900/40 text-red-300 text-xs hover:bg-red-900/70 transition-colors"
+            className="px-4 py-1.5 rounded border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-300 text-xs hover:bg-red-100 dark:hover:bg-red-900/70 transition-colors"
           >
             Discard All
           </button>
           <button
             onClick={onSaveAll}
             disabled={saving}
-            className="px-4 py-1.5 rounded border border-green-700 bg-green-900/40 text-green-300 text-xs hover:bg-green-900/70 transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 rounded border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs hover:bg-green-100 dark:hover:bg-green-900/70 transition-colors disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save All"}
           </button>
@@ -67,11 +67,11 @@ function RoleSwitchModal({ onSaveAll, onDiscardAll, onCancel, saving }: ModalPro
 }
 
 // ── Legend swatch ──────────────────────────────────────────────────────────────
-function LegendSwatch({ bg, fg, label }: { bg: string; fg: string; label: string }) {
+function LegendSwatch({ bg, label }: { bg: string; fg: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="w-5 h-4 rounded-sm border border-gray-600" style={{ backgroundColor: bg }} />
-      <span style={{ color: fg }} className="text-xs">{label}</span>
+      <div className="w-5 h-4 rounded-sm border border-gray-200 dark:border-gray-600" style={{ backgroundColor: bg }} />
+      <span className="text-xs text-gray-700 dark:text-gray-300">{label}</span>
     </div>
   );
 }
@@ -166,10 +166,10 @@ export default function AgGridTestingPage() {
 
       {/* ── Page heading ────────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           🧪 AG Grid Testing
         </h2>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Grid layout and permissions driven by DB rules in{" "}
           <code className="text-indigo-300">planning.grid_*</code>.
           Data from{" "}
@@ -181,8 +181,8 @@ export default function AgGridTestingPage() {
 
       {/* ── Role switcher ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
-        <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Role</label>
-        <div className="flex rounded-md border border-gray-600 overflow-hidden">
+        <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Role</label>
+        <div className="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden">
           {ROLES.map(r => (
             <button
               key={r}
@@ -190,7 +190,7 @@ export default function AgGridTestingPage() {
               className={`px-4 py-1.5 text-xs font-medium transition-colors ${
                 role === r
                   ? "bg-indigo-600 text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}
             >
               {r}
@@ -205,8 +205,8 @@ export default function AgGridTestingPage() {
       </div>
 
       {/* ── Colour legend ────────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/40 px-4 py-3">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 px-4 py-3">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
           Cell colour legend
         </p>
         <div className="flex flex-wrap gap-4">
@@ -224,7 +224,7 @@ export default function AgGridTestingPage() {
           <LegendSwatch bg="#1e3a5f" fg="#93c5fd" label="Product — brand (L2)" />
           <LegendSwatch bg="#052e16" fg="#86efac" label="Product — SKU / leaf (L3)" />
         </div>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
           Pending (amber) overrides all other styles until saved or cancelled.
           Switching role applies to all grids simultaneously.
         </p>

@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
+import { ThemeProvider } from "./components/layout/ThemeContext";
 
 // NOTE: StrictMode has been intentionally removed.
 // AG Grid v33 + React 19 can crash under StrictMode because StrictMode
@@ -9,6 +10,8 @@ import App from "./App";
 // with AG Grid's DOM initialization lifecycle.
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </BrowserRouter>
 );

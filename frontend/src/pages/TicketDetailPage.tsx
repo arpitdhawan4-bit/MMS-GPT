@@ -1,12 +1,5 @@
 /**
  * TicketDetailPage  —  /workflow/tickets/:ticketId
- * ------------------------------------------------
- * • Ticket header (number, customer, priority, status, description)
- * • DB-driven workflow timeline (phases fetched from /api/workflow/phases/:id)
- * • SLA countdown badge (next_escalation_at)
- * • Action buttons (signals fetched from /api/workflow/signals/:id — all from DB)
- * • Dynamic action form (requires_fields JSONB from DB drives the form fields)
- * • Activity log (chronological table)
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -14,7 +7,6 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface Ticket {
   ticket_id: number; ticket_number: string; customer_name: string;
   customer_email: string; subject: string; description: string;
@@ -48,7 +40,6 @@ interface Signal {
 }
 interface Agent { agent_id: number; name: string; level: string }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(iso: string | null | undefined) {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("en-US", {
@@ -57,25 +48,24 @@ function fmt(iso: string | null | undefined) {
 }
 
 function PriorityBadge({ p }: { p: string }) {
-  const s: Record<string,string> = {
-    high: "bg-red-950 text-red-300 border border-red-800",
-    medium: "bg-amber-950 text-amber-300 border border-amber-800",
-    low: "bg-green-950 text-green-300 border border-green-800",
+  const s: Record<string, string> = {
+    high:   "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800",
+    medium: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
+    low:    "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800",
   };
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${s[p]??""}`}>{p}</span>;
+  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${s[p] ?? ""}`}>{p}</span>;
 }
 
 function countdown(iso: string | null) {
   if (!iso) return null;
   const diff = new Date(iso).getTime() - Date.now();
   const mins = Math.round(diff / 60000);
-  if (mins < 0) return { label: "Overdue", color: "text-red-400" };
-  if (mins < 60) return { label: `${mins}m`, color: "text-red-400 font-semibold" };
-  if (mins < 240) return { label: `${Math.round(mins/60)}h ${mins%60}m`, color: "text-amber-400" };
-  return { label: `${Math.round(mins/60)}h`, color: "text-gray-400" };
+  if (mins < 0) return { label: "Overdue", color: "text-red-500 dark:text-red-400" };
+  if (mins < 60) return { label: `${mins}m`, color: "text-red-500 dark:text-red-400 font-semibold" };
+  if (mins < 240) return { label: `${Math.round(mins / 60)}h ${mins % 60}m`, color: "text-amber-600 dark:text-amber-400" };
+  return { label: `${Math.round(mins / 60)}h`, color: "text-gray-500 dark:text-gray-400" };
 }
 
-// ── Workflow Timeline ─────────────────────────────────────────────────────────
 function WorkflowTimeline({
   phases, currentPhaseKey, nextEscAt,
 }: { phases: Phase[]; currentPhaseKey: string; nextEscAt: string | null }) {
@@ -84,7 +74,6 @@ function WorkflowTimeline({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Stepper */}
       <div className="flex items-center">
         {phases.map((p, i) => {
           const isDone = i < currentIdx;
@@ -92,51 +81,41 @@ function WorkflowTimeline({
           const isLast = i === phases.length - 1;
           return (
             <div key={p.phase_key} className="flex items-center flex-1 last:flex-none">
-              {/* Circle */}
               <div className="flex flex-col items-center gap-1 relative">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                    isCurrent
-                      ? "border-white scale-110 shadow-lg shadow-black/30"
-                      : isDone
-                      ? "border-opacity-50 opacity-60"
-                      : "border-gray-600 opacity-30"
+                    isCurrent ? "scale-110 shadow-lg" : isDone ? "border-opacity-50 opacity-60" : "opacity-30"
                   }`}
                   style={isCurrent || isDone ? {
                     backgroundColor: p.phase_color + "33",
                     borderColor: p.phase_color,
                     color: p.phase_color,
-                  } : {}}
+                  } : { borderColor: "#9ca3af" }}
                 >
                   {isDone ? "✓" : i + 1}
                 </div>
-                <span className={`text-xs whitespace-nowrap ${isCurrent ? "text-white font-medium" : "text-gray-500"}`}>
+                <span className={`text-xs whitespace-nowrap ${isCurrent ? "text-gray-900 dark:text-white font-medium" : "text-gray-400 dark:text-gray-500"}`}>
                   {p.phase_label}
                 </span>
               </div>
-              {/* Connector */}
               {!isLast && (
-                <div className={`flex-1 h-0.5 mx-2 mb-4 ${isDone ? "bg-gray-500" : "bg-gray-700"}`} />
+                <div className={`flex-1 h-0.5 mx-2 mb-4 ${isDone ? "bg-gray-400 dark:bg-gray-500" : "bg-gray-200 dark:bg-gray-700"}`} />
               )}
             </div>
           );
         })}
       </div>
-      {/* SLA countdown */}
       {cd && (
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500">Next escalation in:</span>
+          <span className="text-gray-500 dark:text-gray-500">Next escalation in:</span>
           <span className={cd.color}>{cd.label}</span>
-          {nextEscAt && (
-            <span className="text-gray-600">({fmt(nextEscAt)})</span>
-          )}
+          {nextEscAt && <span className="text-gray-400 dark:text-gray-600">({fmt(nextEscAt)})</span>}
         </div>
       )}
     </div>
   );
 }
 
-// ── Signal Action Form (modal) ────────────────────────────────────────────────
 function ActionModal({
   signal, agents, onClose, onSuccess,
 }: {
@@ -144,12 +123,12 @@ function ActionModal({
   onClose: () => void; onSuccess: () => void;
 }) {
   const { ticketId } = useParams<{ ticketId: string }>();
-  const [values, setValues] = useState<Record<string,string>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const inp = "w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500";
-  const lbl = "block text-xs text-gray-400 mb-1";
+  const inp = "w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-indigo-500";
+  const lbl = "block text-xs text-gray-600 dark:text-gray-400 mb-1";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setErr(null);
@@ -167,16 +146,16 @@ function ActionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md mx-4 shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-          <h3 className="font-semibold text-white">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-md mx-4 shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="font-semibold text-gray-900 dark:text-white">
             {signal.icon} {signal.signal_label}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl leading-none">✕</button>
         </div>
         <form onSubmit={submit} className="px-6 py-5 flex flex-col gap-4">
           {signal.requires_fields.length === 0 ? (
-            <p className="text-sm text-gray-400">Confirm this action?</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Confirm this action?</p>
           ) : (
             signal.requires_fields.map((f) => (
               <div key={f.name}>
@@ -202,10 +181,10 @@ function ActionModal({
               </div>
             ))
           )}
-          {err && <p className="text-red-400 text-xs">{err}</p>}
+          {err && <p className="text-red-500 dark:text-red-400 text-xs">{err}</p>}
           <div className="flex justify-end gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="px-4 py-2 text-sm border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800">
+              className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
               Cancel
             </button>
             <button type="submit" disabled={busy}
@@ -219,18 +198,20 @@ function ActionModal({
   );
 }
 
-// ── Action Type colour ─────────────────────────────────────────────────────────
 function actionColor(type: string) {
-  const m: Record<string,string> = {
-    created: "text-blue-400", assigned: "text-indigo-400",
-    escalated: "text-orange-400", resolved: "text-green-400",
-    closed: "text-gray-500", phase_changed: "text-purple-400",
-    add_note: "text-gray-300", note_added: "text-gray-300",
+  const m: Record<string, string> = {
+    created:      "text-blue-600 dark:text-blue-400",
+    assigned:     "text-indigo-600 dark:text-indigo-400",
+    escalated:    "text-orange-600 dark:text-orange-400",
+    resolved:     "text-green-600 dark:text-green-400",
+    closed:       "text-gray-500 dark:text-gray-500",
+    phase_changed:"text-purple-600 dark:text-purple-400",
+    add_note:     "text-gray-600 dark:text-gray-300",
+    note_added:   "text-gray-600 dark:text-gray-300",
   };
-  return m[type] ?? "text-gray-400";
+  return m[type] ?? "text-gray-500 dark:text-gray-400";
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function TicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const navigate = useNavigate();
@@ -264,14 +245,9 @@ export default function TicketDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  function handleSignalSuccess() {
-    setActiveSignal(null);
-    load();
-  }
-
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center text-gray-500">
+      <div className="max-w-5xl mx-auto py-12 text-center text-gray-500 dark:text-gray-400">
         Loading ticket…
       </div>
     );
@@ -279,38 +255,37 @@ export default function TicketDetailPage() {
 
   if (!ticket) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-12 text-center text-red-400">
+      <div className="max-w-5xl mx-auto py-12 text-center text-red-500 dark:text-red-400">
         Ticket not found.
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col gap-6">
+    <div className="max-w-5xl mx-auto flex flex-col gap-6">
 
-      {/* ── Back + Header ─────────────────────────────────────────────── */}
+      {/* Back + Header */}
       <div>
         <button onClick={() => navigate("/workflow")}
-          className="text-xs text-gray-500 hover:text-gray-300 mb-3 flex items-center gap-1 transition-colors">
+          className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-3 flex items-center gap-1 transition-colors">
           ← Back to Tickets
         </button>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <span className="font-mono text-indigo-400 font-bold text-lg">{ticket.ticket_number}</span>
+              <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold text-lg">{ticket.ticket_number}</span>
               <PriorityBadge p={ticket.priority} />
-              <span className="text-xs text-gray-500 uppercase tracking-wide">{ticket.sub_category}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wide">{ticket.sub_category}</span>
             </div>
-            <h1 className="text-xl font-semibold text-white mb-1">{ticket.subject}</h1>
-            <p className="text-sm text-gray-400">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{ticket.subject}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {ticket.customer_name}
-              <span className="text-gray-600 mx-1.5">·</span>
+              <span className="text-gray-400 dark:text-gray-600 mx-1.5">·</span>
               {ticket.customer_email}
-              <span className="text-gray-600 mx-1.5">·</span>
+              <span className="text-gray-400 dark:text-gray-600 mx-1.5">·</span>
               Created {fmt(ticket.created_at)}
             </p>
           </div>
-          {/* Current phase pill */}
           {workflow && (
             <div className="flex flex-col items-end gap-1 shrink-0">
               <span className="px-3 py-1 rounded-full text-xs font-semibold"
@@ -321,7 +296,7 @@ export default function TicketDetailPage() {
                 }}>
                 {workflow.phase_label}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-500">
                 {ticket.agent_name ? `Assigned: ${ticket.agent_name}` : "Unassigned"}
               </span>
             </div>
@@ -329,12 +304,12 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      {/* ── Workflow Timeline ──────────────────────────────────────────── */}
+      {/* Workflow Timeline */}
       {phases.length > 0 && workflow && (
-        <div className="rounded-xl border border-gray-700 bg-gray-900 px-6 py-5">
-          <h3 className="text-sm font-semibold text-gray-300 mb-4">⚙️ Workflow Timeline
-            <span className="text-xs text-gray-600 font-normal ml-2">
-              (phases & SLA rules defined in DB — workflow_phases + workflow_sla_rules)
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">⚙️ Workflow Timeline
+            <span className="text-xs text-gray-400 dark:text-gray-600 font-normal ml-2">
+              (phases & SLA rules defined in DB)
             </span>
           </h3>
           <WorkflowTimeline
@@ -345,28 +320,28 @@ export default function TicketDetailPage() {
         </div>
       )}
 
-      {/* ── Signal Action Buttons (all from DB) ────────────────────────── */}
+      {/* Signal Action Buttons */}
       {signals.length > 0 && (
-        <div className="rounded-xl border border-gray-700 bg-gray-900 px-6 py-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             🎯 Actions
-            <span className="text-xs text-gray-600 font-normal ml-2">
-              (from workflow_signals table — add/remove actions by changing DB rows)
+            <span className="text-xs text-gray-400 dark:text-gray-600 font-normal ml-2">
+              (from workflow_signals table)
             </span>
           </h3>
           <div className="flex flex-wrap gap-2">
             {signals.map(sig => {
-              const isResolve = sig.target_phase_key === "resolved";
+              const isResolve  = sig.target_phase_key === "resolved";
               const isEscalate = sig.signal_key === "escalate";
               return (
                 <button key={sig.signal_key}
                   onClick={() => setActiveSignal(sig)}
                   className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors flex items-center gap-1.5 ${
                     isResolve
-                      ? "bg-green-900/40 border-green-700 text-green-300 hover:bg-green-900/70"
+                      ? "bg-green-50 dark:bg-green-900/40 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/70"
                       : isEscalate
-                      ? "bg-orange-900/40 border-orange-700 text-orange-300 hover:bg-orange-900/70"
-                      : "bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
+                      ? "bg-orange-50 dark:bg-orange-900/40 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/70"
+                      : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}>
                   <span>{sig.icon}</span>
                   <span>{sig.signal_label}</span>
@@ -377,25 +352,25 @@ export default function TicketDetailPage() {
         </div>
       )}
 
-      {/* ── Ticket Description ─────────────────────────────────────────── */}
+      {/* Description */}
       {ticket.description && (
-        <div className="rounded-xl border border-gray-700 bg-gray-900 px-6 py-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">📄 Description</h3>
-          <p className="text-sm text-gray-400 leading-relaxed">{ticket.description}</p>
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📄 Description</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{ticket.description}</p>
         </div>
       )}
 
-      {/* ── Activity Log ───────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-700 overflow-hidden">
-        <div className="bg-gray-800 px-4 py-3 border-b border-gray-700">
-          <span className="text-sm font-semibold text-gray-200">📜 Activity Log</span>
-          <span className="text-xs text-gray-500 ml-2">({activities.length} entries)</span>
+      {/* Activity Log */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">📜 Activity Log</span>
+          <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">({activities.length} entries)</span>
         </div>
-        <div className="bg-gray-900">
+        <div className="bg-white dark:bg-gray-900">
           {activities.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 text-sm">No activities yet</div>
+            <div className="py-8 text-center text-gray-400 dark:text-gray-500 text-sm">No activities yet</div>
           ) : (
-            <div className="divide-y divide-gray-800">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {activities.map(a => (
                 <div key={a.activity_id} className="px-5 py-3 flex items-start gap-4">
                   <div className="shrink-0 w-24 text-right">
@@ -404,17 +379,17 @@ export default function TicketDetailPage() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-300 leading-snug">{a.description}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{a.description}</p>
                     {(a.old_value || a.new_value) && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         {a.old_value && <span className="line-through mr-2">{a.old_value}</span>}
-                        {a.new_value && <span className="text-gray-400">→ {a.new_value}</span>}
+                        {a.new_value && <span className="text-gray-600 dark:text-gray-400">→ {a.new_value}</span>}
                       </p>
                     )}
                   </div>
                   <div className="shrink-0 text-right">
-                    <span className="text-xs text-gray-600">{a.actor_name}</span>
-                    <p className="text-xs text-gray-700">{fmt(a.created_at)}</p>
+                    <span className="text-xs text-gray-500 dark:text-gray-600">{a.actor_name}</span>
+                    <p className="text-xs text-gray-400 dark:text-gray-700">{fmt(a.created_at)}</p>
                   </div>
                 </div>
               ))}
@@ -423,13 +398,12 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      {/* ── Action Modal (DB-driven form from requires_fields JSONB) ─────── */}
       {activeSignal && (
         <ActionModal
           signal={activeSignal}
           agents={agents}
           onClose={() => setActiveSignal(null)}
-          onSuccess={handleSignalSuccess}
+          onSuccess={() => { setActiveSignal(null); load(); }}
         />
       )}
     </div>

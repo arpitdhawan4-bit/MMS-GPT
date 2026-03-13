@@ -33,14 +33,16 @@ export default function QueryInput({ onSubmit, loading }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-300">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Ask a question about your planning data
         </label>
 
         <div className="flex gap-3 items-end">
           <textarea
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white
-                       placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500
+            className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700
+                       rounded-xl px-4 py-3 text-gray-900 dark:text-white
+                       placeholder-gray-400 dark:placeholder-gray-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-500
                        focus:border-transparent resize-none text-sm leading-relaxed"
             rows={3}
             placeholder="e.g. What were my gross sales in January 2026?"
@@ -52,7 +54,8 @@ export default function QueryInput({ onSubmit, loading }: Props) {
           <button
             onClick={submit}
             disabled={loading || !question.trim()}
-            className="px-5 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700
+            className="px-5 py-3 bg-blue-600 hover:bg-blue-500
+                       disabled:bg-gray-200 dark:disabled:bg-gray-700
                        disabled:cursor-not-allowed text-white font-semibold rounded-xl
                        transition-colors text-sm whitespace-nowrap flex items-center gap-2"
           >
@@ -72,7 +75,7 @@ export default function QueryInput({ onSubmit, loading }: Props) {
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500">Press Enter to submit · Shift+Enter for new line</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Press Enter to submit · Shift+Enter for new line</p>
       </div>
 
       {/* Example queries */}
@@ -81,8 +84,10 @@ export default function QueryInput({ onSubmit, loading }: Props) {
           <button
             key={ex}
             onClick={() => { setQuestion(ex); }}
-            className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700
-                       rounded-full text-gray-300 hover:text-white transition-colors"
+            className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
+                       border border-gray-200 dark:border-gray-700
+                       rounded-full text-gray-600 dark:text-gray-300
+                       hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             {ex}
           </button>

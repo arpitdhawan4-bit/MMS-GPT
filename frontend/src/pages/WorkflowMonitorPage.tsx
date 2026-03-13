@@ -1,10 +1,5 @@
 /**
  * WorkflowMonitorPage  —  /workflow/monitor
- * ------------------------------------------
- * • Summary count cards (running / completed / failed)
- * • Running workflow instances table with live SLA countdown
- * • Recently completed instances table
- * • Auto-refreshes every 30 seconds
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -31,10 +26,10 @@ function countdown(iso: string | null) {
   if (!iso) return null;
   const diff = new Date(iso).getTime() - Date.now();
   const mins = Math.round(diff / 60000);
-  if (mins < 0)   return { label: "⚠ Overdue", color: "text-red-400 font-semibold" };
-  if (mins < 60)  return { label: `${mins}m`, color: "text-red-400 font-semibold" };
-  if (mins < 240) return { label: `${Math.round(mins/60)}h ${mins%60}m`, color: "text-amber-400" };
-  return { label: `${Math.round(mins/60)}h`, color: "text-gray-400" };
+  if (mins < 0)   return { label: "⚠ Overdue", color: "text-red-500 dark:text-red-400 font-semibold" };
+  if (mins < 60)  return { label: `${mins}m`,   color: "text-red-500 dark:text-red-400 font-semibold" };
+  if (mins < 240) return { label: `${Math.round(mins/60)}h ${mins%60}m`, color: "text-amber-600 dark:text-amber-400" };
+  return { label: `${Math.round(mins/60)}h`, color: "text-gray-500 dark:text-gray-400" };
 }
 
 function fmt(iso: string | null | undefined) {
@@ -59,7 +54,7 @@ function PhasePill({ label, color }: { label: string; color: string }) {
 }
 
 function PriorityDot({ p }: { p: string }) {
-  const c = { high: "#f87171", medium: "#fbbf24", low: "#4ade80" }[p] ?? "#9ca3af";
+  const c = { high: "#ef4444", medium: "#f59e0b", low: "#22c55e" }[p] ?? "#9ca3af";
   return (
     <span className="inline-flex items-center gap-1">
       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
@@ -68,15 +63,15 @@ function PriorityDot({ p }: { p: string }) {
   );
 }
 
-function CountCard({ label, value, icon, color }: {
-  label: string; value: number; icon: string; color: string;
+function CountCard({ label, value, icon, borderClass }: {
+  label: string; value: number; icon: string; borderClass: string;
 }) {
   return (
-    <div className={`rounded-xl border ${color} px-5 py-4 flex items-center gap-4`}>
+    <div className={`rounded-xl border ${borderClass} bg-white dark:bg-gray-900 px-5 py-4 flex items-center gap-4`}>
       <span className="text-3xl">{icon}</span>
       <div>
-        <p className="text-2xl font-bold text-white">{value.toLocaleString()}</p>
-        <p className="text-xs text-gray-400">{label}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value.toLocaleString()}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
       </div>
     </div>
   );
@@ -107,73 +102,73 @@ export default function WorkflowMonitorPage() {
     return () => clearInterval(timer);
   }, [load]);
 
-  const runningCount  = Number(counts["running"]   ?? 0);
-  const completedCount= Number(counts["completed"] ?? 0);
-  const totalCount    = runningCount + completedCount;
+  const runningCount   = Number(counts["running"]   ?? 0);
+  const completedCount = Number(counts["completed"] ?? 0);
+  const totalCount     = runningCount + completedCount;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-6">
+    <div className="max-w-7xl mx-auto flex flex-col gap-6">
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">📡 Workflow Monitor</h2>
-          <p className="text-sm text-gray-400 mt-0.5">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">📡 Workflow Monitor</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Live view of APScheduler-backed workflow instances · SLA timers stored in DB
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-400 dark:text-gray-600">
             Last refresh: {lastRefresh.toLocaleTimeString()}
           </span>
           <button onClick={load}
-            className="px-3 py-2 text-xs border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+            className="px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             🔄 Refresh
           </button>
         </div>
       </div>
 
-      {/* ── Count Cards ─────────────────────────────────────────────────── */}
+      {/* Count Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <CountCard label="Total Instances" value={totalCount}    icon="⚙️" color="border-gray-700" />
-        <CountCard label="Running"         value={runningCount}  icon="🔄" color="border-blue-800" />
-        <CountCard label="Completed"       value={completedCount}icon="✅" color="border-green-800" />
+        <CountCard label="Total Instances" value={totalCount}    icon="⚙️" borderClass="border-gray-200 dark:border-gray-700" />
+        <CountCard label="Running"         value={runningCount}  icon="🔄" borderClass="border-blue-200 dark:border-blue-800" />
+        <CountCard label="Completed"       value={completedCount}icon="✅" borderClass="border-green-200 dark:border-green-800" />
         <CountCard label="With SLA Jobs"
           value={running.filter(r => r.scheduler_job_id).length}
-          icon="⏰" color="border-amber-800" />
+          icon="⏰" borderClass="border-amber-200 dark:border-amber-800" />
       </div>
 
-      {/* ── DB-driven engine callout ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-purple-900/40 bg-purple-950/20 px-5 py-3 text-sm text-purple-300 flex items-start gap-3">
+      {/* Engine callout */}
+      <div className="rounded-xl border border-purple-200 dark:border-purple-900/40 bg-purple-50 dark:bg-purple-950/20 px-5 py-3 text-sm text-purple-700 dark:text-purple-300 flex items-start gap-3">
         <span className="text-lg mt-0.5">🔬</span>
         <div>
           <span className="font-medium">How the engine works:</span>
-          <span className="text-purple-400"> Each running instance has an APScheduler job stored in PostgreSQL.
+          <span className="text-purple-600 dark:text-purple-400"> Each running instance has an APScheduler job stored in PostgreSQL.
           When the SLA timer fires, </span>
-          <code className="text-purple-300 text-xs bg-purple-950/50 px-1 rounded">escalate_job(instance_id)</code>
-          <span className="text-purple-400"> reads the next phase from </span>
-          <code className="text-xs text-purple-300 bg-purple-950/50 px-1 rounded">workflow_sla_rules</code>
-          <span className="text-purple-400"> and transitions — zero hardcoded logic.</span>
+          <code className="text-purple-700 dark:text-purple-300 text-xs bg-purple-100 dark:bg-purple-950/50 px-1 rounded">escalate_job(instance_id)</code>
+          <span className="text-purple-600 dark:text-purple-400"> reads the next phase from </span>
+          <code className="text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/50 px-1 rounded">workflow_sla_rules</code>
+          <span className="text-purple-600 dark:text-purple-400"> and transitions — zero hardcoded logic.</span>
         </div>
       </div>
 
-      {/* ── Running Instances ───────────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-700 overflow-hidden">
-        <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-200">🔄 Running Workflows</span>
-          <span className="text-xs bg-blue-900/50 text-blue-300 border border-blue-800 px-2 py-0.5 rounded-full">
+      {/* Running Instances */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">🔄 Running Workflows</span>
+          <span className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
             {runningCount} active
           </span>
         </div>
-        <div className="bg-gray-900 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 overflow-x-auto">
           {loading ? (
-            <div className="py-10 text-center text-gray-500 text-sm">Loading…</div>
+            <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
           ) : running.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 text-sm">No running workflows</div>
+            <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">No running workflows</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-700 uppercase tracking-wide">
+                <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 uppercase tracking-wide">
                   <th className="px-4 py-3 text-left">Ticket</th>
                   <th className="px-4 py-3 text-left">Customer</th>
                   <th className="px-4 py-3 text-left">Current Phase</th>
@@ -190,35 +185,35 @@ export default function WorkflowMonitorPage() {
                   const cd = countdown(r.next_escalation_at);
                   return (
                     <tr key={r.instance_id}
-                      className="border-b border-gray-800 hover:bg-gray-800/40 cursor-pointer transition-colors"
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
                       onClick={() => navigate(`/workflow/tickets/${r.ticket_id}`)}>
-                      <td className="px-4 py-3 text-indigo-400 font-mono font-medium">
+                      <td className="px-4 py-3 text-indigo-600 dark:text-indigo-400 font-mono font-medium">
                         {r.ticket_number}
                       </td>
-                      <td className="px-4 py-3 text-gray-200 max-w-[140px] truncate">
+                      <td className="px-4 py-3 text-gray-700 dark:text-gray-200 max-w-[140px] truncate">
                         {r.customer_name}
                       </td>
                       <td className="px-4 py-3">
                         <PhasePill label={r.phase_label} color={r.phase_color} />
                       </td>
                       <td className="px-4 py-3"><PriorityDot p={r.priority} /></td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {r.agent_name ?? "—"}
                       </td>
                       <td className="px-4 py-3">
                         {cd ? (
                           <span className={`text-xs ${cd.color}`}>{cd.label}</span>
-                        ) : <span className="text-gray-600 text-xs">—</span>}
+                        ) : <span className="text-gray-400 dark:text-gray-600 text-xs">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-500 text-xs">
                         {fmt(r.next_escalation_at)}
                       </td>
                       <td className="px-4 py-3">
-                        <code className="text-xs text-gray-600 truncate max-w-[120px] block">
+                        <code className="text-xs text-gray-400 dark:text-gray-600 truncate max-w-[120px] block">
                           {r.scheduler_job_id ?? "—"}
                         </code>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{fmt(r.started_at)}</td>
+                      <td className="px-4 py-3 text-gray-400 dark:text-gray-600 text-xs">{fmt(r.started_at)}</td>
                     </tr>
                   );
                 })}
@@ -228,21 +223,21 @@ export default function WorkflowMonitorPage() {
         </div>
       </div>
 
-      {/* ── Recently Completed ───────────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-700 overflow-hidden">
-        <div className="bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-200">✅ Recently Completed</span>
-          <span className="text-xs bg-green-900/50 text-green-300 border border-green-800 px-2 py-0.5 rounded-full">
+      {/* Recently Completed */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">✅ Recently Completed</span>
+          <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 px-2 py-0.5 rounded-full">
             last 20
           </span>
         </div>
-        <div className="bg-gray-900 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 overflow-x-auto">
           {completed.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 text-sm">No completed workflows yet</div>
+            <div className="py-8 text-center text-gray-400 dark:text-gray-500 text-sm">No completed workflows yet</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-700 uppercase tracking-wide">
+                <tr className="text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 uppercase tracking-wide">
                   <th className="px-4 py-3 text-left">Ticket</th>
                   <th className="px-4 py-3 text-left">Customer</th>
                   <th className="px-4 py-3 text-left">Final Phase</th>
@@ -254,16 +249,16 @@ export default function WorkflowMonitorPage() {
               <tbody>
                 {completed.map(c => (
                   <tr key={c.instance_id}
-                    className="border-b border-gray-800 hover:bg-gray-800/40 cursor-pointer transition-colors"
+                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 cursor-pointer transition-colors"
                     onClick={() => navigate(`/workflow/tickets/${c.ticket_id}`)}>
-                    <td className="px-4 py-3 text-indigo-400 font-mono">{c.ticket_number}</td>
-                    <td className="px-4 py-3 text-gray-300">{c.customer_name}</td>
+                    <td className="px-4 py-3 text-indigo-600 dark:text-indigo-400 font-mono">{c.ticket_number}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{c.customer_name}</td>
                     <td className="px-4 py-3">
                       <PhasePill label={c.phase_label} color={c.phase_color} />
                     </td>
                     <td className="px-4 py-3"><PriorityDot p={c.priority} /></td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{fmt(c.started_at)}</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{fmt(c.completed_at)}</td>
+                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 text-xs">{fmt(c.started_at)}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{fmt(c.completed_at)}</td>
                   </tr>
                 ))}
               </tbody>
