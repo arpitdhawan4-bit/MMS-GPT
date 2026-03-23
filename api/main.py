@@ -19,14 +19,17 @@ Run:
 
 import os
 import re
+import io
+import tempfile
 import psycopg2
 import psycopg2.extras
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
+import cloudmersive_virus_api_client
 
 from api.workflow.router import router as workflow_router
 from api.workflow.engine import scheduler as wf_scheduler
@@ -37,6 +40,7 @@ load_dotenv(".env")
 
 DB_URL = os.environ["SUPABASE_DB_URL"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+CLOUDMERSIVE_API_KEY = os.environ.get("CLOUDMERSIVE_API_KEY", "")
 
 oai = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -368,6 +372,70 @@ FIXED SQL:"""
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/api/scan-file")
+async def scan_file_endpoint(file: UploadFile = File(...)):
+    """
+    Virus-scan an uploaded file using Cloudmersive Virus Scan API.
+
+    The file is NOT stored here — this endpoint scans only.
+    The frontend calls this BEFORE uploading to Supabase Storage.
+    If clean=true, the frontend proceeds with the Supabase upload.
+    If clean=false, the upload is blocked and the threat name is shown.
+
+    Returns:
+        { "clean": bool, "threats": list[str], "file_name": str }
+    """
+    if not CLOUDMERSIVE_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="CLOUDMERSIVE_API_KEY is not configured in the server environment.",
+        )
+
+    # Read uploaded bytes and write to a temp file on disk.
+    # The Cloudmersive Python SDK requires a file-system path (str/PathLike),
+    # NOT an in-memory BytesIO object.
+    file_bytes = await file.read()
+    suffix = os.path.splitext(file.filename or "upload")[1] or ".bin"
+
+    tmp_path: str | None = None
+    result = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(file_bytes)
+            tmp_path = tmp.name
+
+        # Configure Cloudmersive client with our API key
+        configuration = cloudmersive_virus_api_client.Configuration()
+        configuration.api_key["Apikey"] = CLOUDMERSIVE_API_KEY
+        api_client = cloudmersive_virus_api_client.ApiClient(configuration)
+        scan_api = cloudmersive_virus_api_client.ScanApi(api_client)
+
+        result = scan_api.scan_file(tmp_path)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Cloudmersive scan request failed: {str(exc)}",
+        )
+    finally:
+        # Always clean up the temp file even if the scan raised an exception
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+    # Extract threat names if any viruses were found
+    threats: list[str] = []
+    if result.found_viruses:
+        threats = [
+            f"{v.file_name}: {v.virus_name}"
+            for v in result.found_viruses
+        ]
+
+    return {
+        "clean": bool(result.clean_result),
+        "threats": threats,
+        "file_name": file.filename,
+    }
 
 
 @app.post("/api/query", response_model=QueryResponse)

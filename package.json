@@ -13,6 +13,7 @@
     "concurrently": "^9.0.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.3",
     "ag-grid-community": "^35.1.0",
     "ag-grid-react": "^35.1.0",
     "lucide-react": "^0.577.0",

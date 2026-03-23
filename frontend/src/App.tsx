@@ -10,6 +10,7 @@ import AgGridTestingPage from "./pages/AgGridTestingPage";
 import WorkflowDashboardPage from "./pages/WorkflowDashboardPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import WorkflowMonitorPage from "./pages/WorkflowMonitorPage";
+import FileManagerPage from "./pages/FileManagerPage";
 import { MainLayout } from "./components/layout/MainLayout";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -258,6 +259,7 @@ export default function App() {
         <Route path="/workflow" element={<WorkflowDashboardPage />} />
         <Route path="/workflow/tickets/:ticketId" element={<TicketDetailPage />} />
         <Route path="/workflow/monitor" element={<WorkflowMonitorPage />} />
+        <Route path="/file-manager" element={<FileManagerPage />} />
       </Route>
     </Routes>
   );

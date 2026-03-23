@@ -11,6 +11,7 @@ import {
   FlaskConical,
   Ticket,
   Monitor,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FlaskConical,
   Ticket,
   Monitor,
+  HardDrive,
 };
 
 // ── API base URL ─────────────────────────────────────────────────────────────
