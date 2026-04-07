@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL ?? "";
 
 interface RunningInst {
   instance_id: number; ticket_id: number; ticket_number: string;

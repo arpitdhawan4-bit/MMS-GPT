@@ -13,7 +13,7 @@ import WorkflowMonitorPage from "./pages/WorkflowMonitorPage";
 import FileManagerPage from "./pages/FileManagerPage";
 import { MainLayout } from "./components/layout/MainLayout";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChunkDetail {
