@@ -6,6 +6,8 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 3000,
+    strictPort: true,
     proxy: {
       // Forward all /api/* calls to the FastAPI backend on port 8001.
       // This avoids CORS issues and lets the frontend use relative URLs.
