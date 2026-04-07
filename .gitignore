@@ -26,6 +26,13 @@ next-env.d.ts
 .vercel
 .vscode/
   
-# Test output  
-tests/test_results/  
-uvicorn.log  
+# Test output
+tests/test_results/
+uvicorn.log
+
+# One-time migration scripts (contain DB passwords — never commit)
+migrate_db.py
+fix_migration.py
+finish_migration.py
+check_storage.py
+migrate_storage.py
